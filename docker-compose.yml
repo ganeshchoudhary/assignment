@@ -1,0 +1,44 @@
+version: "3.2"
+services:
+  postgres:
+    image: "postgres"
+    container_name: postgres
+    ports:
+    - 5432:5432
+    volumes:
+      - servicedb:/var/lib/postgresql
+    environment:
+      - POSTGRES_PASSWORD=mypass
+      - POSTGRES_USER=myuser
+      - POSTGRES_DB=servicedb
+    networks:
+      - docker_network
+  app:
+    build: .
+    image: app
+    container_name: dashboard
+    command: ["java", "-jar", "app.jar"]
+    ports:
+      - 8080:8080
+
+    environment:
+      - DATABASE_URL=jdbc:postgresql://postgres:5432/servicedb
+      - DATABASE_USERNAME=myuser
+      - DATABASE_PASSWORD=mypass
+      - APP_VERSION=demo-1.2.0
+      - ALLOWED_ORIGINS=http://localhost:4200/
+      - spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
+      - spring.jpa.hibernate.ddl-auto=update
+    volumes:
+      - ./config:/app/config:ro
+    networks:
+      - docker_network
+    depends_on:
+      - postgres
+
+  networks:
+    docker_network:
+      driver: bridge
+
+  volumes:
+    servicedb:
